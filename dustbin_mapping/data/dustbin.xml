@@ -1,0 +1,14 @@
+<openerp>
+    <data>
+        <record model="ir.cron" id="ir_cron_get_messages">
+            <field name="name">API Messages from DComposite Service</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="doall" eval="False"/>
+            <field name="model" eval="'maps.messages'"/>
+            <field name="function" eval="'_cron_get_messages'"/>
+            <field name="args" eval="'()'"/>
+        </record>
+    </data>
+</openerp>
