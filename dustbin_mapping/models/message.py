@@ -12,7 +12,8 @@ class MapMessages(models.Model):
     message_id = fields.Char('Message ID')
     phone = fields.Char('Phone')
     message = fields.Char('Message')
-    date = fields.Date('Date Sent')
+    date = fields.Date('Date Sent on Dcomposite')
+    received = fields.Date('Date Received on GeoBin')
 
     _sql_constraints = [
         ('message_id_unique',
@@ -29,20 +30,20 @@ class MapMessages(models.Model):
         resp = requests.get(url, headers=headers)
         messages = json.loads(resp.content)
         needed = messages["results"]
+        print needed
         for message in needed:
             messages_in = self.env['maps.messages'].search([])
-            messageid = message["id"]
+            message_id = message["id"]
             tel = message["urn"]
             text = message["text"]
             time = message["created_on"]
-            if str(messageid) in [str(msg.message_id) for msg in messages_in]:
-                continue
-            else:
+            if str(message_id) not in [str(msg.message_id) for msg in messages_in]:
                 message_object.create({
-                    'message_id': messageid,
+                    'message_id': message_id,
                     'phone': tel,
                     'message': text,
-                    'date': time
+                    'date': time,
+                    'received': datetime.now()
                 })
 
         print "Generating Dustbin Status............."
@@ -55,49 +56,46 @@ class MapMessages(models.Model):
                 if msg.message_id not in [loop.name for loop in looped]:
                     code = ''
                     stat = ''
-                    codeslower = [cod.name.lower() for cod in codes]
+                    code_lower = [cod.name.lower() for cod in codes]
                     for s in ['empty', 'mid', 'full']:
                         if s in msg.message.lower():
                             stat = s
-                    for c in codeslower:
+                    for c in code_lower:
                         if c in msg.message.lower():
                             code = c
                     if len(code) > 1 and len(stat) > 1:
                         code_upper = code.upper()
-                        dustbin = self.env['geoengine.demo.automatic.retailing.machine'].search(
+                        dustbin = self.env['dustbin.dustbin'].search(
                             [('code', '=', code_upper)])
                         dustbin.states = stat
                     looped_obj.create({
                         'name': msg.message_id,
-                        'date': datetime.today()
+                        'date': datetime.now()
                     })
                 else:
                     pass
 
     @api.model
     def get_messages(self):
-        while True:
-            message_object = self.env['maps.messages']
-            url = "http://104.197.248.134/api/v1/messages.json"
-            headers = {'Authorization': 'Token 88f6f60aa0db2e41354f833c8599db38589af8c5'}
-            resp = requests.get(url, headers=headers)
-            messages = json.loads(resp.content)
-            needed = messages["results"]
-            for message in needed:
-                messages_in = self.env['maps.messages'].search([])
-                messageid = message["id"]
-                tel = message["urn"]
-                text = message["text"]
-                time = message["created_on"]
-                if str(messageid) in [str(msg.message_id) for msg in messages_in]:
-                    continue
-                else:
-                    message_object.create({
-                        'message_id': messageid,
-                        'phone': tel,
-                        'message': text,
-                        'date': time
-                    })
+        message_object = self.env['maps.messages']
+        url = "http://104.197.248.134/api/v1/messages.json"
+        headers = {'Authorization': 'Token 88f6f60aa0db2e41354f833c8599db38589af8c5'}
+        resp = requests.get(url, headers=headers)
+        messages = json.loads(resp.content)
+        needed = messages["results"]
+        for message in needed:
+            messages_in = self.env['maps.messages'].search([])
+            message_id = message["id"]
+            tel = message["urn"]
+            text = message["text"]
+            time = message["created_on"]
+            if str(message_id) not in [str(msg.message_id) for msg in messages_in]:
+                message_object.create({
+                    'message_id': message_id,
+                    'phone': tel,
+                    'message': text,
+                    'date': time
+                })
 
     @api.one
     def compute_dustbin_status(self):
@@ -110,16 +108,16 @@ class MapMessages(models.Model):
                 if msg.message_id not in [loop.name for loop in looped]:
                     code = ''
                     stat = ''
-                    codeslower = [cod.name.lower() for cod in codes]
+                    code_lower = [cod.name.lower() for cod in codes]
                     for s in ['empty', 'mid', 'full']:
                         if s in msg.message.lower():
                             stat = s
-                    for c in codeslower:
+                    for c in code_lower:
                         if c in msg.message.lower():
                             code = c
                     if len(code) > 1 and len(stat) > 1:
                         code_upper = code.upper()
-                        dustbin = self.env['geoengine.demo.automatic.retailing.machine'].search([('code', '=', code_upper)])
+                        dustbin = self.env['dustbin.dustbin'].search([('code', '=', code_upper)])
                         dustbin.states = stat
                     looped_obj.create({
                         'name': msg.message_id,
