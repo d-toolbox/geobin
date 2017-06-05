@@ -10,5 +10,20 @@
             <field name="function" eval="'_cron_get_messages'"/>
             <field name="args" eval="'()'"/>
         </record>
+
+        <!-- Needed to start Color Chain !!!Do not Delete always load data when installing module!!-->
+
+        <record id="dustbin_demo_code" model="dustbin.code">
+            <field name="name">Base Code</field>
+        </record>
+
+        <record id="dustbin_demo_dustbin" model="dustbin.dustbin">
+            <field name="name">Base Dustbin</field>
+            <field name="type">view</field>
+            <field name="state">empty</field>
+            <field name="type">view</field>
+            <field name='the_point'>POINT(731452.399608894 5875278.22228421)</field>
+            <field name="code" ref="dustbin_demo_code"/>
+        </record>
     </data>
 </openerp>

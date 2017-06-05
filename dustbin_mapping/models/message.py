@@ -5,6 +5,7 @@ from openerp.exceptions import ValidationError
 import requests
 import json
 from datetime import datetime
+import time
 
 
 class MapMessages(models.Model):
@@ -23,30 +24,38 @@ class MapMessages(models.Model):
 
     @api.model
     def _cron_get_messages(self):
-        print "calling cron job..................."
+        print "calling cron job >>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<"
         message_object = self.env['maps.messages']
         url = "http://104.197.248.134/api/v1/messages.json"
-        headers = {'Authorization': 'Token 88f6f60aa0db2e41354f833c8599db38589af8c5'}
-        resp = requests.get(url, headers=headers)
-        messages = json.loads(resp.content)
-        needed = messages["results"]
+        header = {'Authorization': 'Token 88f6f60aa0db2e41354f833c8599db38589af8c5'}
+        try:
+            resp = requests.get(url, headers=header)
+            messages = json.loads(resp.content)
+            incoming = messages["results"]
+        except:
+            raise ValidationError("Failed Connecting to Dcomposite")
+
+        needed = [mg for mg in incoming]
         print needed
         for message in needed:
             messages_in = self.env['maps.messages'].search([])
             message_id = message["id"]
             tel = message["urn"]
             text = message["text"]
-            time = message["created_on"]
+            time_stamp = message["created_on"]
             if str(message_id) not in [str(msg.message_id) for msg in messages_in]:
                 message_object.create({
                     'message_id': message_id,
                     'phone': tel,
                     'message': text,
-                    'date': time,
+                    'date': time_stamp,
                     'received': datetime.now()
                 })
+            else:
+                print "Message there"
+                time.sleep(5)
 
-        print "Generating Dustbin Status............."
+        print "Generating Dustbin Status >>>>>>>>>><<<<<<<<<"
         messages = self.env['maps.messages'].search([])
         codes = self.env['dustbin.code'].search([])
         looped_obj = self.env['message.looped']
@@ -57,7 +66,7 @@ class MapMessages(models.Model):
                     code = ''
                     stat = ''
                     code_lower = [cod.name.lower() for cod in codes]
-                    for s in ['empty', 'mid', 'full']:
+                    for s in ['empty', 'full']:
                         if s in msg.message.lower():
                             stat = s
                     for c in code_lower:
@@ -67,7 +76,7 @@ class MapMessages(models.Model):
                         code_upper = code.upper()
                         dustbin = self.env['dustbin.dustbin'].search(
                             [('code', '=', code_upper)])
-                        dustbin.states = stat
+                        dustbin.state = stat
                     looped_obj.create({
                         'name': msg.message_id,
                         'date': datetime.now()
@@ -77,24 +86,31 @@ class MapMessages(models.Model):
 
     @api.model
     def get_messages(self):
+        print "calling manual get message >>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<"
         message_object = self.env['maps.messages']
         url = "http://104.197.248.134/api/v1/messages.json"
-        headers = {'Authorization': 'Token 88f6f60aa0db2e41354f833c8599db38589af8c5'}
-        resp = requests.get(url, headers=headers)
-        messages = json.loads(resp.content)
-        needed = messages["results"]
+        header = {'Authorization': 'Token 88f6f60aa0db2e41354f833c8599db38589af8c5'}
+        try:
+            resp = requests.get(url, headers=header)
+            messages = json.loads(resp.content)
+            incoming = messages["results"]
+        except:
+            raise ValidationError("Failed Connecting to Dcomposite")
+        needed = [mg for mg in incoming]
+        print needed
+        time.sleep(5)
         for message in needed:
             messages_in = self.env['maps.messages'].search([])
             message_id = message["id"]
             tel = message["urn"]
             text = message["text"]
-            time = message["created_on"]
+            time_stamp = message["created_on"]
             if str(message_id) not in [str(msg.message_id) for msg in messages_in]:
                 message_object.create({
                     'message_id': message_id,
                     'phone': tel,
                     'message': text,
-                    'date': time
+                    'date': time_stamp
                 })
 
     @api.one
@@ -109,7 +125,7 @@ class MapMessages(models.Model):
                     code = ''
                     stat = ''
                     code_lower = [cod.name.lower() for cod in codes]
-                    for s in ['empty', 'mid', 'full']:
+                    for s in ['empty', 'full']:
                         if s in msg.message.lower():
                             stat = s
                     for c in code_lower:
@@ -118,16 +134,10 @@ class MapMessages(models.Model):
                     if len(code) > 1 and len(stat) > 1:
                         code_upper = code.upper()
                         dustbin = self.env['dustbin.dustbin'].search([('code', '=', code_upper)])
-                        dustbin.states = stat
+                        dustbin.state = stat
                     looped_obj.create({
                         'name': msg.message_id,
                         'date': datetime.today()
                     })
                 else:
                     pass
-
-
-class LoopedId(models.Model):
-    _name = 'message.looped'
-    name = fields.Char("Loop ID")
-    date = fields.Date(default=datetime.now())

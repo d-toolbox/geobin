@@ -35,6 +35,7 @@
                         <field name="thepoi"/>
                         <field name="long"/>
                         <field name="lat"/>
+                        <field name="type"/>
 
 
                     </group>
