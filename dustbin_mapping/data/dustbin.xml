@@ -22,7 +22,7 @@
             <field name="type">view</field>
             <field name="state">empty</field>
             <field name="type">view</field>
-            <field name='the_point'>POINT(731452.399608894 5875278.22228421)</field>
+            <field name='the_point'>POINT(-1478073.2834759 948362.9268342587)</field>
             <field name="code" ref="dustbin_demo_code"/>
         </record>
     </data>
