@@ -36,24 +36,23 @@ class MapMessages(models.Model):
             raise ValidationError("Failed Connecting to Dcomposite")
 
         needed = [mg for mg in incoming]
-        print needed
         for message in needed:
-            messages_in = self.env['maps.messages'].search([])
-            message_id = message["id"]
-            tel = message["urn"]
-            text = message["text"]
-            time_stamp = message["created_on"]
-            if str(message_id) not in [str(msg.message_id) for msg in messages_in]:
-                message_object.create({
-                    'message_id': message_id,
-                    'phone': tel,
-                    'message': text,
-                    'date': time_stamp,
-                    'received': datetime.now()
-                })
-            else:
-                print "Message there"
-                time.sleep(5)
+            if 10 > len(message["text"]) > 5:
+                messages_in = self.env['maps.messages'].search([])
+                message_id = message["id"]
+                tel = message["urn"]
+                text = message["text"]
+                time_stamp = message["created_on"]
+                if str(message_id) not in [str(msg.message_id) for msg in messages_in]:
+                    message_object.create({
+                        'message_id': message_id,
+                        'phone': tel,
+                        'message': text,
+                        'date': time_stamp,
+                        'received': datetime.now()
+                    })
+                else:
+                    continue
 
         print "Generating Dustbin Status >>>>>>>>>><<<<<<<<<"
         messages = self.env['maps.messages'].search([])
@@ -76,13 +75,14 @@ class MapMessages(models.Model):
                         code_upper = code.upper()
                         dustbin = self.env['dustbin.dustbin'].search(
                             [('code', '=', code_upper)])
-                        dustbin.state = stat
+                        if dustbin:
+                            dustbin.state = stat
                     looped_obj.create({
                         'name': msg.message_id,
                         'date': datetime.now()
                     })
                 else:
-                    pass
+                    continue
 
     @api.model
     def get_messages(self):
@@ -100,18 +100,22 @@ class MapMessages(models.Model):
         print needed
         time.sleep(5)
         for message in needed:
-            messages_in = self.env['maps.messages'].search([])
-            message_id = message["id"]
-            tel = message["urn"]
-            text = message["text"]
-            time_stamp = message["created_on"]
-            if str(message_id) not in [str(msg.message_id) for msg in messages_in]:
-                message_object.create({
-                    'message_id': message_id,
-                    'phone': tel,
-                    'message': text,
-                    'date': time_stamp
-                })
+            if 10 > len(message["text"]) > 5:
+                messages_in = self.env['maps.messages'].search([])
+                message_id = message["id"]
+                tel = message["urn"]
+                text = message["text"]
+                time_stamp = message["created_on"]
+                if str(message_id) not in [str(msg.message_id) for msg in messages_in]:
+                    message_object.create({
+                        'message_id': message_id,
+                        'phone': tel,
+                        'message': text,
+                        'date': time_stamp,
+                        'received': datetime.now()
+                    })
+                else:
+                    continue
 
     @api.one
     def compute_dustbin_status(self):
@@ -133,11 +137,13 @@ class MapMessages(models.Model):
                             code = c
                     if len(code) > 1 and len(stat) > 1:
                         code_upper = code.upper()
-                        dustbin = self.env['dustbin.dustbin'].search([('code', '=', code_upper)])
-                        dustbin.state = stat
+                        dustbin = self.env['dustbin.dustbin'].search(
+                            [('code', '=', code_upper)])
+                        if dustbin:
+                            dustbin.state = stat
                     looped_obj.create({
                         'name': msg.message_id,
-                        'date': datetime.today()
+                        'date': datetime.now()
                     })
                 else:
-                    pass
+                    continue
